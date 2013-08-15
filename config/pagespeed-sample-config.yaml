@@ -1,0 +1,50 @@
+GlobalPagespeedOptions:
+    DefaultThreadPoolSize: 10
+    FileCachePath: /tmp
+    RewriteLevel: PassThrough
+    UseNativeFetcher: Off
+    
+Rules:    
+    - UrlRegex: "[?&]disable_pagespeed=1"
+      DisablePagespeed: true
+
+    - UrlRegex: http[s]{0,1}://trafficserver.apache.org/.*
+      MatchMethod: PostRemap
+      CaseSensitive: false
+      PagespeedOptions:
+        # Here we enable two filters collapse_whitespace and lazyload_images
+        EnableFilters: [ collapse_whitespace, lazyload_images ]
+        
+        # Fetch all of the images after onload.
+        LazyloadImagesAfterOnload: On
+        
+        # This is the 1x1 pixel place holder
+        LazyloadImagesBlankUrl: "http://s.c.lnkd.licdn.com/scds/common/u/img/spacer.gif"
+     
+    - UrlRegex: http[s]{0,1}://www.linkedin.com/.*
+      MatchMethod: PostRemap
+      CaseSensitive: false
+      PagespeedOptions:
+        # Here we enable two filters collapse_whitespace and lazyload_images
+        EnableFilters: [ collapse_whitespace, lazyload_images ]
+        
+        # Fetch all of the images after onload.
+        LazyloadImagesAfterOnload: On
+        
+        # This is the 1x1 pixel place holder
+        LazyloadImagesBlankUrl: "http://s.c.lnkd.licdn.com/scds/common/u/img/spacer.gif"
+        
+    - UrlRegex: http[s]{0,1}://127.0.0.1:4040/.*
+      MatchMethod: PostRemap
+      CaseSensitive: false
+      PagespeedOptions:
+        # Here we enable two filters collapse_whitespace and lazyload_images
+        EnableFilters: [ collapse_whitespace, lazyload_images ]
+        
+        # Fetch all of the images after onload.
+        LazyloadImagesAfterOnload: On
+        
+        # This is the 1x1 pixel place holder
+        LazyloadImagesBlankUrl: "http://s.c.lnkd.licdn.com/scds/common/u/img/spacer.gif"
+        
+        
