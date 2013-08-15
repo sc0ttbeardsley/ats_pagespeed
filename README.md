@@ -1,7 +1,8 @@
 Pagespeed for Apache Traffic Server
 ====================================
-** THIS README IS INCOMPLETE, I WILL FINISH IT IN THE NEXT FEW DAYS **
+_This plugin is highly experimental and is still very much under development._ 
 
+** THIS README IS INCOMPLETE, I WILL FINISH IT IN THE NEXT FEW DAYS **
 
 Building
 -------------------------------------
@@ -77,4 +78,13 @@ From within the root ats_pagespeed directory, run the following:
     ./configure
     make -j V=1
 
-    
+License
+---------------------
+Copyright (c) 2013 LinkedIn Corp. All rights reserved. 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+except in compliance with the License. You may obtain a copy of the license at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the
+License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+either express or implied.    
