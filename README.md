@@ -1,6 +1,6 @@
 Pagespeed for Apache Traffic Server
 ====================================
-
+** THIS README IS INCOMPLETE, I WILL FINISH IT IN THE NEXT FEW DAYS **
 
 
 Building
