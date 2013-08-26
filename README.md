@@ -16,7 +16,7 @@ zlib-devel
 0. Download and Install atscppapi
 ats_pagespeed is built on top of atscppapi, which is an opensource c++ api wrapper for Apache Traffic Server developed by LinkedIn.
 
-    // INSTRUCTIONS HERE   
+  To build and install atscppapi follow the instructions available here: https://github.com/linkedin/atscppapi
 
 1. Install yaml-cpp-0.3.0
 
@@ -24,7 +24,7 @@ Typically this can be done via
     
     sudo yum install yaml-cpp-0.3.0 yaml-cpp-devel-0.3.0
 
-If not download the 0.3.0 source from and follow these commands     
+If not download the 0.3.0 source from (http://code.google.com/p/yaml-cpp/) and follow these commands     
     
     mkdir build
     cd build
@@ -35,6 +35,9 @@ If not download the 0.3.0 source from and follow these commands
 2. Build Pagespeed Libraries
     
     cd lib/
+   
+    We have included a tar.gz version of the pagespeed library code, if you wish to build off of this
+    version just extract it and skip to step 2.3.
     
 2.1 Install Depot Tools
     
@@ -43,7 +46,7 @@ If not download the 0.3.0 source from and follow these commands
     export PATH=$PATH:`pwd`/depot_tools && \
     cd -
         
-2.2 Build Pagespeed
+2.2 Checkout Pagespeed
 
 More information on the following steps can be found at https://developers.google.com/speed/docs/mod_pagespeed/build_from_source.
 From within the lib/ folder
@@ -52,16 +55,18 @@ From within the lib/ folder
     gclient config http://modpagespeed.googlecode.com/svn/branches/27/src ; \
     gclient sync --force --jobs=1
 
-You will now have a src/ folder created under lib with the 27 branch version of mod_pagespeed.
-
+    You will now have a src/ folder created under lib with the 27 branch version of mod_pagespeed.
+2.3 Build Pagespeed
 Next, build mod_pagespeed, although we are not using mod_pagespeed in order to get the pagespeed
 sdk you must build mod_pagespeed.
  
     make V=1 -j -C lib/src/net/instaweb/automatic/ BUILDTYPE=Release &&
     make V=1 -j -C lib/src/ BUILDTYPE=Release
-    
+
 To build in debug mode:
-For some reason with -O0 it causes stat64 to be undefined at runtime.
+    
+    Note: For some reason with -O0 it causes stat64 to be undefined at runtime.
+    
     cd lib
     tar xzvf psol.src.tar.gz 
     export CCFLAGS="-O1" && \
