@@ -34,9 +34,13 @@
 #include <map>
 #include <string>
 #include <list>
-#include "net/instaweb/util/public/string_writer.h"
 #include "net/instaweb/http/public/request_headers.h"
 #include "net/instaweb/http/public/response_headers.h"
+
+#include <atscppapi/Mutex.h>
+#include "net/instaweb/util/public/string_writer.h"
+#include "net/instaweb/util/public/string.h"
+#include "net/instaweb/util/public/string_util.h"
 
 using namespace atscppapi;
 using namespace atscppapi::transformations;
@@ -51,6 +55,23 @@ using std::map;
 namespace ats_pagespeed {
 GlobalConf global_config; // ats_pagespeed.h
 
+// Writer implementation for directing HTML output to a string.
+class ProtectedStringWriter : public Writer {
+ public:
+  explicit ProtectedStringWriter(GoogleString* str, atscppapi::Mutex *m) : string_(str), mutex_(m) { }
+  virtual ~ProtectedStringWriter() { }
+  virtual bool Write(const StringPiece& str, MessageHandler* message_handler) {
+    mutex_->lock();
+    string_ ->append(str.as_string());
+    mutex_->unlock();
+    return true;
+  }
+
+  virtual bool Flush(MessageHandler* message_handler) { return true; }
+ private:
+  GoogleString* string_;
+  atscppapi::Mutex *mutex_;
+};
 
 class AtsPagespeedTransformationPlugin: public TransformationPlugin {
 public:
@@ -58,15 +79,14 @@ public:
     request_context_.reset(new AtsRequestContext(rule_.server_context->thread_system()->NewMutex(),
                        NULL));
     request_context_->set_using_spdy(false);
-    string_writer_.reset(new StringWriter(&buffer_));
-    //rewrite_driver_ = rule_.server_context->NewUnmanagedRewriteDriver(NULL, rule_.server_context->global_options()->Clone(), request_context_);
-    ///rewrite_driver_->set_externally_managed(true);
+
+    write_mutex_.reset(new atscppapi::Mutex());
+    string_writer_.reset(new ProtectedStringWriter(&buffer_, write_mutex_.get()));
 
     rewrite_driver_ = rule_.server_context->NewRewriteDriver(request_context_);
     LOG_DEBUG("Using rewrite driver %p", rewrite_driver_);
     rewrite_driver_->set_size_limit(1*1024*1024); // 1 mb
     rewrite_driver_->set_fully_rewrite_on_flush(true);
-
     rewrite_driver_->SetWriter(string_writer_.get());
     if(!rewrite_driver_->StartParse(transaction_.getClientRequest().getUrl().getUrlString())) {
       LOG_ERROR("Failure starting html parse on url %s", transaction_.getClientRequest().getUrl().getUrlString().c_str());
@@ -92,13 +112,15 @@ public:
 
     bytes_received_ += data.length();
 
-    // Is this a problem with StringPiece using data.data() and data.length() directly?
     rewrite_driver_->ParseText(data);
-    if (buffer_.size()) {
-      bytes_written_ += buffer_.size();
-      LOG_DEBUG("Pagespeed produced %d bytes of output", static_cast<int>(buffer_.size()));
-      produce(buffer_);
-      buffer_.clear();
+    {
+      atscppapi::ScopedMutexLock(*write_mutex_.get());
+      if (buffer_.size()) {
+        bytes_written_ += buffer_.size();
+        LOG_DEBUG("Pagespeed produced %d bytes of output", static_cast<int>(buffer_.size()));
+        produce(buffer_);
+        buffer_.clear();
+      }
     }
   }
 
@@ -107,12 +129,15 @@ public:
       rewrite_driver_->FinishParse();
       completed_cleanly_ = true;
 
-      if (buffer_.size()) {
-        bytes_written_ += buffer_.size();
-        LOG_DEBUG("Pagespeed produced a final %d bytes of output",
-            static_cast<int>(buffer_.size()));
-        produce(buffer_);
-        buffer_.clear();
+      {
+        atscppapi::ScopedMutexLock(*write_mutex_.get());
+        if (buffer_.size()) {
+          bytes_written_ += buffer_.size();
+          LOG_DEBUG("Pagespeed produced a final %d bytes of output",
+              static_cast<int>(buffer_.size()));
+          produce(buffer_);
+          buffer_.clear();
+        }
       }
     }
 
@@ -143,8 +168,9 @@ private:
   bool done_send_resp_headers_;
   bool have_resp_headers_;
   string buffer_;
+  scoped_ptr<atscppapi::Mutex> write_mutex_;
   RefCountedPtr<RequestContext> request_context_;
-  scoped_ptr<StringWriter> string_writer_;
+  scoped_ptr<ProtectedStringWriter> string_writer_;
   scoped_ptr<RequestHeaders> request_headers_;
   scoped_ptr<ResponseHeaders> response_headers_;
   RewriteDriver *rewrite_driver_; // These are managed within server context (don't try to delete).
